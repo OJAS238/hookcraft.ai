@@ -1,199 +1,314 @@
 import streamlit as st
+import time
+import json
+import plotly.graph_objects as go
 from groq import Groq
 
-# 1. Configure the AI Brain
-GROQ_API_KEY = st.text_input("🔑 Enter Groq API Key:", type="password")
-client = Groq(api_key=GROQ_API_KEY)
+# Page configuration
+st.set_page_config(
+    page_title="HookCraft AI Enterprise",
+    page_icon="🧠",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# 2. Force Wide-Screen Layout to use all screen space
-st.set_page_config(page_title="HookCraft AI", page_icon="🧠", layout="wide")
-
-# --- CUSTOM CSS INJECTION FOR AN ELITE SaaS DASHBOARD ---
+# Professional Premium Dark UI CSS Injection
 st.markdown("""
-    <style>
-        /* Dark Cyberpunk Theme Background */
-        .stApp {
-            background: linear-gradient(135deg, #07090e 0%, #0f131a 100%);
-            color: #f0f2f6;
-            font-family: 'Inter', sans-serif;
-        }
-        
-        /* Left/Right Container Column Adjustments */
-        [data-testid="stHorizontalBlock"] {
-            gap: 2rem !important;
-        }
-        
-        /* Header Title Styling */
-        .main-title {
-            font-size: 3.5rem;
-            font-weight: 900;
-            background: linear-gradient(90deg, #ff007f, #7928ca, #00dfd8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0rem;
-            letter-spacing: -1px;
-        }
-        .sub-title {
-            font-size: 1.1rem;
-            color: #718096;
-            margin-bottom: 2rem;
-        }
-
-        /* Input Panel Wrapper Card */
-        .input-panel {
-            background: #121620;
-            border: 1px solid #232936;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-        }
-
-        /* TEXT AREA TYPING VISIBILITY FIX */
-        .stTextArea textarea {
-            background-color: #1a202c !important;
-            color: #ffffff !important;
-            font-size: 1.1rem !important;
-            border: 2px solid #2d3748 !important;
-            border-radius: 12px !important;
-            padding: 15px !important;
-        }
-        .stTextArea textarea:focus {
-            border-color: #ff007f !important;
-            box-shadow: 0 0 15px rgba(255, 0, 127, 0.2) !important;
-        }
-        
-        /* FIX FOR THE UNSEEN "CTRL + ENTER" HINT TEXT */
-        .stTextArea label p, 
-        .stTextArea [data-testid="stWidgetInstructions"] small,
-        .stTextArea div div div div div {
-            color: #ff007f !important; /* High-visibility Neon Pink */
-            font-weight: 800 !important;
-            font-size: 0.95rem !important;
-        }
-        
-        [data-testid="stWidgetInstructions"] {
-            color: #ff007f !important;
-            font-weight: 800 !important;
-        }
-        
-        /* Neon Action Button */
-        .stButton>button {
-            width: 100%;
-            background: linear-gradient(90deg, #ff007f 0%, #7928ca 100%) !important;
-            color: white !important;
-            font-weight: 800 !important;
-            font-size: 1.1rem !important;
-            padding: 14px 20px !important;
-            border-radius: 12px !important;
-            border: none !important;
-            box-shadow: 0 4px 20px rgba(255, 0, 127, 0.4);
-            transition: all 0.2s ease;
-        }
-        .stButton>button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(255, 0, 127, 0.6);
-        }
-        
-        /* Premium Output Glassmorphism Card */
-        .output-card {
-            background: rgba(22, 28, 42, 0.6);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-left: 6px solid #00dfd8;
-            padding: 2.5rem;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-            font-size: 1.15rem;
-            line-height: 1.7;
-        }
-        
-        /* Beautiful Glowing Placeholder card layout */
-        .placeholder-card {
-            border: 2px dashed #00dfd8 !important; /* Radiant Neon Teal Border */
-            background: rgba(0, 223, 216, 0.02) !important;
-            border-radius: 16px;
-            padding: 5rem 2rem;
-            text-align: center;
-            color: #ffffff !important;
-            font-size: 1.2rem;
-            box-shadow: 0 0 20px rgba(0, 223, 216, 0.05);
-        }
-    </style>
+<style>
+    .stApp { 
+        background: radial-gradient(circle at 90% 10%, rgba(255, 0, 127, 0.05), transparent 40%),
+                    radial-gradient(circle at 10% 90%, rgba(0, 223, 216, 0.05), transparent 40%),
+                    #07090e; 
+        color: #ffffff; 
+    }
+    h1, h2, h3, h4 { font-family: 'Inter', sans-serif !important; font-weight: 700 !important; }
+    
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    .hero-banner {
+        background: linear-gradient(135deg, rgba(13, 17, 23, 0.8) 0%, rgba(7, 9, 14, 0.9) 100%);
+        border: 1px solid rgba(0, 223, 216, 0.2);
+        border-radius: 16px;
+        padding: 35px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .stTextArea textarea { 
+        border: 1px solid rgba(255, 255, 255, 0.1) !important; 
+        background-color: #0d1117 !important; 
+        color: #e2e8f0 !important; 
+        border-radius: 12px !important;
+        font-size: 15px !important;
+        padding: 15px !important;
+    }
+    .stTextArea textarea:focus { 
+        border: 1px solid #00dfd8 !important; 
+        box-shadow: 0 0 15px rgba(0, 223, 216, 0.15) !important;
+    }
+    
+    div.stButton > button { 
+        background: linear-gradient(90deg, #ff007f, #d00067) !important; 
+        color: #ffffff !important; 
+        font-weight: 700 !important; 
+        border-radius: 10px !important; 
+        border: none !important;
+        padding: 14px 28px !important;
+        font-size: 16px !important;
+        transition: all 0.3s ease !important;
+    }
+    div.stButton > button:hover { 
+        background: linear-gradient(90deg, #00dfd8, #00b3b0) !important; 
+        color: #07090e !important;
+        transform: translateY(-2px);
+    }
+    
+    .saas-card {
+        background: #0d1117;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    
+    .failure-card {
+        background: rgba(255, 0, 127, 0.03);
+        border: 1px solid rgba(255, 0, 127, 0.2);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    
+    .empty-state-slot {
+        border: 2px dashed rgba(0, 223, 216, 0.15);
+        padding: 50px 30px;
+        text-align: center;
+        border-radius: 16px;
+        background: rgba(13, 17, 23, 0.4);
+        color: #718096;
+    }
+    
+    .phrase-pill {
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: inline-block;
+        margin: 5px 5px 5px 0px;
+    }
+    .pill-strong { background: rgba(0, 223, 216, 0.1); border: 1px solid #00dfd8; color: #00dfd8; }
+    .pill-medium { background: rgba(255, 171, 0, 0.1); border: 1px solid #ffab00; color: #ffab00; }
+    .pill-weak { background: rgba(255, 0, 127, 0.1); border: 1px solid #ff007f; color: #ff007f; }
+</style>
 """, unsafe_allow_html=True)
 
-# 3. Premium Main Header
-st.markdown('<h1 class="main-title">🧠 HookCraft AI</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Pre-Production Cognitive Mapping & Script Optimization Engine</p>', unsafe_allow_html=True)
-
-# 4. SPLIT TWO-COLUMN SaaS LAYOUT
-left_column, right_column = st.columns([2, 3])
-
-# --- LEFT SIDE: INPUT & CONTROLS ---
-with left_column:
-    st.markdown('<div class="input-panel">', unsafe_allow_html=True)
-    st.markdown("### ⚙️ Engine Parameters")
-    
-    platform = st.selectbox("🎯 Target Platform", ["TikTok Reels / Shorts (9:16)", "YouTube Long-form (16:9)", "LinkedIn Video"])
-    tone = st.select_slider("🔥 Content Persona Intensity", options=["Casual", "Intriguing", "Aggressive / Viral"])
-    
-    st.markdown("---")
-    
-    user_hook = st.text_area("⚡ Paste Your Video Hook Script Here:", 
-                             placeholder="e.g., 'In this video, I will show you how to earn money fast...'",
-                             height=180)
-    
-    st.write("")
-    analyze_button = st.button("Run Psychology Mapping 🔥")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# --- RIGHT SIDE: RESULTS & ANALYTICS ---
-with right_column:
-    if analyze_button:
-        if not GROQ_API_KEY:
-            st.error("Please enter your Groq API Key in the entry box at the top left!")
-        elif user_hook.strip() == "":
-            st.warning("Please input a script line first!")
-        else:
-            with st.spinner("Decoding linguistic framework evaluation..."):
-                try:
-                    psychology_prompt = f"""
-                    You are a Viral Video Psychologist and Short-Form Retention Expert optimizing for a {tone} tone on {platform}. 
-                    Analyze the following video hook: "{user_hook}"
-                    
-                    Provide your response in the following neat format:
-                    
-                    ### 📊 Hook Score: [Give a score out of 100]
-                    
-                    ### ❌ Why it might fail:
-                    [Provide a blunt, 2-sentence psychological reason why people will swipe away]
-                    
-                    ### 🧠 The Psychological Remap (3 Viral Variations):
-                    1. **The Curiosity Gap Variation:** [Rewrite the hook to hide key information, forcing them to watch]
-                    2. **The FOMO / Urgency Variation:** [Rewrite it to make them feel like they are missing out on a secret]
-                    3. **The Pattern Interruption Variation:** [Start with a shocking, contrarian statement]
-                    """
-                    
-                    completion = client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=[{"role": "user", "content": psychology_prompt}],
-                    )
-                    
-                    metrics_col1, metrics_col2 = st.columns(2)
-                    metrics_col1.metric("💡 Core Model", "Llama-3.3-70b")
-                    metrics_col2.metric("⚡ Status", "Optimization Synced")
-                    
-                    st.markdown(f'<div class="output-card">{completion.choices[0].message.content}</div>', unsafe_allow_html=True)
-                    
-                except Exception as e:
-                    st.error(f"An error occurred. Details: {e}")
+# Sidebar Configuration for API Key Input
+with st.sidebar:
+    st.markdown("### 🔑 Authentication")
+    user_api_key = st.text_input(
+        "Enter Groq API Key:",
+        type="password",
+        placeholder="gsk_...",
+        help="Get your API key from console.groq.com"
+    )
+    if user_api_key:
+        st.success("API key stored securely!")
     else:
+        st.warning("Please enter your API key to unlock.")
+
+# Session State Control
+if "current_results" not in st.session_state:
+    st.session_state.current_results = None
+if "current_execution_time" not in st.session_state:
+    st.session_state.current_execution_time = None
+if "pipeline_executed" not in st.session_state:
+    st.session_state.pipeline_executed = False
+
+def clear_old_results():
+    st.session_state.current_results = None
+    st.session_state.current_execution_time = None
+    st.session_state.pipeline_executed = False
+
+# Hero Presentation Banner
+st.markdown("""
+<div class="hero-banner">
+    <span style="background: rgba(0, 223, 216, 0.1); color: #00dfd8; padding: 6px 16px; border-radius: 50px; font-size: 12px; font-weight: bold; letter-spacing: 1px;">PRODUCTION LABS v2.5</span>
+    <h1 style="margin: 15px 0 5px 0; font-size: 42px; letter-spacing: -1px; background: linear-gradient(90deg, #ffffff, #a0aec0); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Introducing HookCraft AI</h1>
+    <p style="color: #00dfd8; font-size: 16px; max-width: 600px; margin: 0 auto; font-family: 'Inter';">Predictive retention modeling framework. Optimize scripts via Llama-3.3-70B before cameras roll.</p>
+</div>
+""", unsafe_allow_html=True)
+
+col1, col2 = st.columns([1, 1.2], gap="large")
+
+with col1:
+    st.markdown("### 📋 Content Workspace")
+    user_input = st.text_area(
+        "Script Draft Input Area:", 
+        placeholder="Type or paste your opening video hook here...",
+        height=180,
+        label_visibility="collapsed",
+        key="workspace_input",
+        on_change=clear_old_results
+    )
+        
+    input_is_invalid = len(user_input.strip()) < 10 or not user_api_key
+    
+    btn_cols = st.columns([3, 1.2])
+    with btn_cols[0]:
+        submit_btn = st.button(
+            "🧠 Predict Audience Retention", 
+            disabled=input_is_invalid, 
+            use_container_width=True
+        )
+    with btn_cols[1]:
+        if st.button("🔄 Reset", use_container_width=True):
+            st.session_state.clear()
+            st.rerun()
+            
+    if not user_api_key:
+        st.error("⚠️ *Authentication missing. Provide your Groq API Key in the sidebar.*")
+    elif input_is_invalid:
+        st.caption("🔒 *Console locked. Awaiting draft script values to execute pipeline.*")
+
+# Real-time Cloud Pipeline Execution
+if submit_btn and not input_is_invalid:
+    start_time = time.time()
+    with st.spinner("Calling Groq Network Inferences..."):
+        try:
+            client = Groq(api_key=user_api_key)
+            
+            system_instructions = (
+                "You are an AI video retention analytics engine. Analyze the video script hook provided by the user. "
+                "You MUST output exactly a JSON object matching this structure. Do not output anything else. "
+                "No introductory conversation, no markdown formatting blocks. Just raw valid JSON string.\n"
+                "Structure requirements:\n"
+                "{\n"
+                '  "score": integer_value_0_to_100,\n'
+                '  "why_it_fails": "Detailed paragraph explaining the exact psychological flaws in the original hook, why users will swipe away, and what structural parts are too generic or lack tension.",\n'
+                '  "retention": {"0-3s Window": "XX%", "3-10s Window": "XX%", "10-30s Window": "XX%"},\n'
+                '  "radar_categories": ["Curiosity", "Fear of Missing Out", "Authority", "Novelty", "Trust"],\n'
+                '  "radar_values": [5 integers between 0 and 100 corresponding to the categories above],\n'
+                '  "chunks": [\n'
+                '     {"text": "Short phrase from hook", "strength": "strong" or "medium" or "weak", "explanation": "Brief token impact analysis"}\n'
+                '  ],\n'
+                '  "variations": [\n'
+                '     {"title": "The Curiosity Gap Variation", "text": "A viral re-engineered version leveraging missing critical details to force a watch till the end."},\n'
+                '     {"title": "The FOMO / Urgency Variation", "text": "A viral re-engineered version creating intense artificial time-scarcity or hidden competition."},\n'
+                '     {"title": "The Pattern Interruption Variation", "text": "A viral re-engineered version that completely subverts common viewer expectations or says something jarring."}\n'
+                "  ]\n"
+                "}"
+            )
+
+            chat_completion = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": system_instructions},
+                    {"role": "user", "content": user_input}
+                ],
+                temperature=0.3,
+                response_format={"type": "json_object"}
+            )
+            
+            st.session_state.current_results = json.loads(chat_completion.choices[0].message.content)
+            st.session_state.pipeline_executed = True
+            
+        except Exception as api_err:
+            st.error(f"Groq API Error: {str(api_err)}")
+            st.session_state.pipeline_executed = False
+            
+    st.session_state.current_execution_time = time.time() - start_time
+
+# Live View Render
+with col2:
+    st.markdown("### 🖥️ Deep Metric Analytics")
+    
+    if st.session_state.pipeline_executed and st.session_state.current_results:
+        res = st.session_state.current_results
+        st.markdown(f"⏱️ *Processing complete in **{st.session_state.current_execution_time:.2f}s** via Groq Speculative Engine.*")
+        
+        # Upper KPI Metrics block
+        st.markdown('<div class="saas-card">', unsafe_allow_html=True)
+        m_col1, m_col2 = st.columns([1, 2])
+        with m_col1:
+            st.markdown("<p style='color: #718096; font-size: 11px; font-weight: bold; margin:0;'>HOOK STRENGTH</p>", unsafe_allow_html=True)
+            st.markdown(f"<h1 style='color: #00dfd8; font-size: 56px; margin: 5px 0 0 0; line-height:1;'>{res.get('score', 0)}<span style='font-size:18px; color:#4a5568;'>/100</span></h1>", unsafe_allow_html=True)
+        with m_col2:
+            st.markdown("<p style='color: #718096; font-size: 11px; font-weight: bold; margin:0 0 5px 0;'>RETENTION RISK TIMELINE PREDICTION</p>", unsafe_allow_html=True)
+            ret_data = " &nbsp;&nbsp;|&nbsp;&nbsp; ".join([f"**{k}:** <span style='color:#00dfd8;'>{v}</span>" for k, v in res.get('retention', {}).items()])
+            st.markdown(f"<p style='margin:5px 0 0 0; font-size:15px;'>{ret_data}</p>", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # Why It Might Fail - Deep-Dive Block
+        if "why_it_fails" in res:
+            st.markdown('<div class="failure-card">', unsafe_allow_html=True)
+            st.markdown("<h4 style='color: #ff007f; margin:0 0 10px 0;'>❌ Why it might fail:</h4>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color: #e2e8f0; font-size:14px; line-height:1.6; margin:0;'>{res['why_it_fails']}</p>", unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # Dynamic Visualizations Layer
+        vis_col1, vis_col2 = st.columns([1.1, 1])
+        with vis_col1:
+            st.markdown('<div class="saas-card" style="padding: 20px 15px 0px 15px;">', unsafe_allow_html=True)
+            st.caption("PSYCHOLOGY PROFILE DATA")
+            
+            fig = go.Figure(data=go.Scatterpolar(
+                r=res.get('radar_values', [50, 50, 50, 50, 50]),
+                theta=res.get('radar_categories', ["Curiosity", "Fear of Missing Out", "Authority", "Novelty", "Trust"]),
+                fill='toself',
+                fillcolor='rgba(255, 0, 127, 0.15)',
+                line=dict(color='#ff007f', width=2)
+            ))
+            fig.update_layout(
+                polar=dict(
+                    radialaxis=dict(visible=False, range=[0, 100]),
+                    bgcolor='rgba(0,0,0,0)',
+                    angularaxis=dict(gridcolor='rgba(255,255,255,0.05)', linecolor='rgba(255,255,255,0.1)')
+                ),
+                showlegend=False,
+                margin=dict(l=35, r=35, t=30, b=30),
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='#cbd5e0', size=11)
+            )
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+        with vis_col2:
+            st.markdown('<div class="saas-card">', unsafe_allow_html=True)
+            st.caption("COGNITIVE CHUNK ANALYSIS")
+            st.write("")
+            
+            for chunk in res.get('chunks', []):
+                pill_color = f"pill-{chunk.get('strength', 'medium').lower()}"
+                st.markdown(f'<span class="phrase-pill {pill_color}">"{chunk.get("text")}"</span><br><small style="color:#718096;">→ {chunk.get("explanation")}</small>', unsafe_allow_html=True)
+                st.markdown('<div style="margin-top:12px;"></div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # Output Alternatives Display Card
+        st.markdown('<div class="saas-card">', unsafe_allow_html=True)
+        st.markdown("<h4 style='color: #00dfd8; margin-bottom: 15px;'>🧠 The Psychological Remap (3 Viral Variations):</h4>", unsafe_allow_html=True)
+        for idx, var in enumerate(res.get('variations', []), 1):
+            st.markdown(f"**{idx}. {var.get('title')}**")
+            st.markdown(f"<p style='color: #cbd5e0; background: rgba(255,255,255,0.015); padding: 12px; border-left: 3px solid #ff007f; border-radius: 6px; font-style: italic; margin-top:5px; margin-bottom:15px;'>\"{var.get('text')}\"</p>", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    else:
+        # Standing by State Dashboard Layer
+        st.markdown('<div class="empty-state-slot">', unsafe_allow_html=True)
         st.markdown("""
-            <div class="placeholder-card">
-                🤖 <br><br>
-                <b>Awaiting Creator Script Input</b><br>
-                <span style="font-size:0.9rem; color:#a0aec0;">
-                    Fill out the configuration parameters on the left and click "Run Psychology Mapping" 
-                    or press <b style="color:#ff007f;">Ctrl + Enter</b> to generate your advanced analytics dashboard.
-                </span>
-            </div>
+            <div style="font-size: 40px; margin-bottom: 15px;">⚡</div>
+            <h4 style="color: #ffffff; margin: 0 0 10px 0; font-size: 18px;">Analytics Console Standing By</h4>
+            <p style="color: #718096; font-size: 14px; max-width: 380px; margin: 0 auto; line-height: 1.5; margin-bottom: 30px;">
+                Input your hook in the workspace panel to run real-time predictive retention arrays, phrase chunk coloring, and radar chart telemetry loops.
+            </p>
         """, unsafe_allow_html=True)
+        
+        preview_cols = st.columns(3)
+        with preview_cols[0]:
+            st.metric(label="Target Latency", value="< 1.00s")
+        with preview_cols[1]:
+            st.metric(label="Model Context", value="Llama-3.3")
+        with preview_cols[2]:
+            st.metric(label="Inference Route", value="Groq Cloud")
+            
+        st.markdown('</div>', unsafe_allow_html=True)
